@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DA Valores Markets — Dashboard Institucionales Abril 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  /* ── TOKENS ── */
+  :root {
+    --da-navy:   #0D1B2A;
+    --da-blue:   #1A3A5C;
+    --da-gold:   #C9A84C;
+    --da-amber:  #E8B84B;
+    --da-light:  #F2F5F9;
+    --da-white:  #FFFFFF;
+    --da-red:    #C0392B;
+    --da-green:  #1B7A48;
+    --da-muted:  #6B7C93;
+    --da-border: #D0D9E6;
+    --da-text:   #0D1B2A;
+    --sidebar-w: 220px;
+    --tab-h:     52px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--da-light);
+    color: var(--da-text);
+    font-size: 13px;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--da-navy);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo .da-mark {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--da-amber);
+    letter-spacing: 1px;
+  }
+  .sidebar-logo .da-sub {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .sidebar-date {
+    padding: 10px 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .nav-section {
+    padding: 14px 12px 4px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.3);
+    font-weight: 700;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.65);
+    font-size: 12.5px;
+    transition: background 0.15s, color 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .nav-item.active {
+    background: rgba(201,168,76,0.15);
+    color: var(--da-amber);
+    border-left-color: var(--da-amber);
+    font-weight: 600;
+  }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .topbar {
+    background: var(--da-white);
+    border-bottom: 1px solid var(--da-border);
+    padding: 0 28px;
+    height: var(--tab-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--da-navy);
+  }
+  .topbar-badge {
+    background: var(--da-amber);
+    color: var(--da-navy);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 24px 28px; }
+  .page.active { display: block; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--da-navy);
+  }
+  .section-sub {
+    font-size: 11px;
+    color: var(--da-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  /* ── GRID LAYOUTS ── */
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; margin-bottom: 20px; }
+  .full-width { margin-bottom: 20px; }
+
+  /* ── KPI CARDS ── */
+  .kpi {
+    background: var(--da-white);
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--da-border);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--da-gold);
+  }
+  .kpi.green::before { background: var(--da-green); }
+  .kpi.red::before   { background: var(--da-red); }
+  .kpi.blue::before  { background: var(--da-blue); }
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--da-muted);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--da-navy);
+    line-height: 1;
+  }
+  .kpi-value.sm { font-size: 18px; }
+  .kpi-delta {
+    font-size: 11px;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+  .up   { color: var(--da-green); }
+  .down { color: var(--da-red); }
+  .neutral { color: var(--da-muted); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--da-white);
+    border-radius: 10px;
+    border: 1px solid var(--da-border);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--da-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--da-navy);
+  }
+  .card-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--da-light);
+    color: var(--da-muted);
+  }
+  .card-body { padding: 14px 18px; }
+
+  /* ── TABLES ── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .tbl th {
+    text-align: left;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--da-muted);
+    padding: 6px 10px;
+    background: var(--da-light);
+    border-bottom: 1px solid var(--da-border);
+  }
+  .tbl td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #edf0f5;
+    color: var(--da-text);
+  }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: #f8fafd; }
+  .tbl .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .tbl .rank {
+    width: 24px;
+    font-weight: 900;
+    color: var(--da-gold);
+    font-size: 11px;
+  }
+
+  /* ── CLIENT TAGS ── */
+  .tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.4px;
+  }
+  .tag-fidelized { background: #E8F5E9; color: #2E7D32; }
+  .tag-reciprocity { background: #E3F2FD; color: #1565C0; }
+  .tag-target { background: #FFF8E1; color: #F57F17; }
+  .tag-risk { background: #FFEBEE; color: #B71C1C; }
+  .tag-complex { background: #F3E5F5; color: #6A1B9A; }
+
+  /* ── ALERT BOXES ── */
+  .alert {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-opp  { background: #E8F5E9; border-left: 3px solid var(--da-green); color: #1B5E20; }
+  .alert-risk { background: #FFEBEE; border-left: 3px solid var(--da-red);   color: #7F1D1D; }
+  .alert-info { background: #E3F2FD; border-left: 3px solid var(--da-blue);  color: #1A237E; }
+  .alert-warn { background: #FFF8E1; border-left: 3px solid #F57F17;         color: #7B3F00; }
+
+  /* ── CHART WRAPPER ── */
+  .chart-wrap { position: relative; height: 220px; }
+  .chart-wrap.tall { height: 280px; }
+  .chart-wrap.short { height: 160px; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+  }
+  .progress-label { width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .progress-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: var(--da-light);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--da-gold);
+    transition: width 0.6s ease;
+  }
+  .progress-pct { width: 44px; text-align: right; font-weight: 700; font-size: 11px; color: var(--da-navy); }
+  .progress-val { width: 80px; text-align: right; font-size: 11px; color: var(--da-muted); }
+
+  /* ── ROFEX SCENARIO ── */
+  .scenario-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .scenario-card {
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .sc-bear { background: #FFEBEE; border: 1px solid #FFCDD2; }
+  .sc-base { background: #E8F5E9; border: 1px solid #C8E6C9; }
+  .sc-bull { background: #E3F2FD; border: 1px solid #BBDEFB; }
+  .sc-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .sc-bear .sc-label { color: var(--da-red); }
+  .sc-base .sc-label { color: var(--da-green); }
+  .sc-bull .sc-label { color: var(--da-blue); }
+  .sc-val { font-size: 20px; font-weight: 900; color: var(--da-navy); }
+  .sc-desc { font-size: 10px; color: var(--da-muted); margin-top: 4px; }
+
+  /* ── DIVIDER ── */
+  .divider { border: none; border-top: 1px solid var(--da-border); margin: 20px 0; }
+
+  /* ── CONCENTRATION VISUAL ── */
+  .conc-bar-wrap { margin-bottom: 14px; }
+  .conc-top { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .conc-bar { height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--da-red) var(--t1), var(--da-amber) var(--t1) var(--t2), var(--da-green) var(--t2) 100%); }
+
+  /* ── SCROLLABLE TABLE WRAPPER ── */
+  .tbl-scroll { max-height: 320px; overflow-y: auto; }
+  .tbl-scroll::-webkit-scrollbar { width: 4px; }
+  .tbl-scroll::-webkit-scrollbar-thumb { background: var(--da-border); border-radius: 2px; }
+
+  /* ── FOOTER ── */
+  .pg-footer {
+    padding: 14px 28px;
+    font-size: 10px;
+    color: var(--da-muted);
+    border-top: 1px solid var(--da-border);
+    background: var(--da-white);
+    margin-top: auto;
+  }
+
+  /* ── VA EVOLUTION ── */
+  .va-month-card {
+    background: var(--da-white);
+    border: 1px solid var(--da-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .va-month-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--da-muted); }
+  .va-month-val { font-size: 16px; font-weight: 900; color: var(--da-navy); margin-top: 2px; }
+  .va-month-delta { font-size: 10px; font-weight: 600; margin-top: 2px; }
+
+  .inline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(201,168,76,0.15);
+    color: var(--da-gold);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="da-mark">DA VALORES</div>
+    <div class="da-sub">Markets · Institucionales</div>
+  </div>
+  <div class="sidebar-date">📅 Abril 2026</div>
+
+  <div class="nav-section">Vistas</div>
+  <div class="nav-item active" onclick="showPage('general')">
+    <span class="nav-icon">📊</span> Vista General
+  </div>
+  <div class="nav-item" onclick="showPage('caucion')">
+    <span class="nav-icon">💰</span> Caución
+  </div>
+  <div class="nav-item" onclick="showPage('rofex')">
+    <span class="nav-icon">📈</span> Futuros / Rofex
+  </div>
+  <div class="nav-item" onclick="showPage('acciones')">
+    <span class="nav-icon">📉</span> Acciones / CEDEARs
+  </div>
+  <div class="nav-item" onclick="showPage('va')">
+    <span class="nav-icon">💵</span> VA USD
+  </div>
+
+  <div class="nav-section">Análisis</div>
+  <div class="nav-item" onclick="showPage('ranking')">
+    <span class="nav-icon">🏆</span> Ranking Clientes
+  </div>
+  <div class="nav-item" onclick="showPage('interanual')">
+    <span class="nav-icon">🔄</span> Interanual 2024→2026
+  </div>
+  <div class="nav-item" onclick="showPage('oportunidades')">
+    <span class="nav-icon">🎯</span> Oportunidades
+  </div>
+  <div class="nav-item" onclick="showPage('escenarios')">
+    <span class="nav-icon">🔭</span> Escenarios Rofex
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════ MAIN -->
+<div class="main">
+  <header class="topbar">
+    <span class="topbar-title" id="page-title">Vista General — Abril 2026</span>
+    <span class="topbar-badge">Informe Mensual · Cierre 29/4/2026</span>
+  </header>
+
+  <!-- ════════════════════════════════ PAGE: GENERAL -->
+  <div class="page active" id="page-general">
+
+    <div class="section-header">
+      <span class="section-title">Resumen Ejecutivo</span>
+      <span class="section-sub">Cierre Abril 2026</span>
+    </div>
+
+    <!-- KPI Row 1 -->
+    <div class="grid-4">
+      <div class="kpi">
+        <div class="kpi-label">Total Aranceles Abril</div>
+        <div class="kpi-value sm">$144.256</div>
+        <div class="kpi-delta neutral">Todas las líneas de producto</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Caución — Mes</div>
+        <div class="kpi-value sm">$111.863</div>
+        <div class="kpi-delta up">▲ Principal driver (77,5%)</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Futuros/Rofex — Mes</div>
+        <div class="kpi-value sm">$26.448</div>
+        <div class="kpi-delta up">▲ 2do producto (18,3%)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Acciones/CEDEARs — Mes</div>
+        <div class="kpi-value sm">$2.411</div>
+        <div class="kpi-delta neutral">Potencial de crecimiento</div>
+      </div>
+    </div>
+
+    <!-- KPI Row 2: Acumulado 2026 -->
+    <div class="grid-4">
+      <div class="kpi">
+        <div class="kpi-label">Acum. Caución 2026</div>
+        <div class="kpi-value sm">$396.781</div>
+        <div class="kpi-delta up">▲ vs $476.031 total 2025</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Acum. Futuros 2026</div>
+        <div class="kpi-value sm">$157.016</div>
+        <div class="kpi-delta up">▲ Sólido ritmo anual</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Acum. Acciones 2026</div>
+        <div class="kpi-value sm">$13.579</div>
+        <div class="kpi-delta neutral">+3 meses de histórico</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">VA USD Total Abr-26</div>
+        <div class="kpi-value sm">$410.850</div>
+        <div class="kpi-delta down">▼ vs $429.053 Mar-26</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Mix de productos -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Mix Aranceles por Producto — Abril 2026</span>
+          <span class="card-tag">Mes</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap">
+            <canvas id="chartMixMes"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evolución mensual -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Evolución Mensual Aranceles 2026</span>
+          <span class="card-tag">Ene–Abr 2026</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap">
+            <canvas id="chartEvol2026"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top clientes mes -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Top Clientes — Caución Mes</span>
+          <span class="card-tag">Abril 2026</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th class="rank">#</th><th>Gerente</th><th class="num">ARS</th><th class="num">%</th></tr></thead>
+            <tbody>
+              <tr><td class="rank">1</td><td>Macro Fondos</td><td class="num">33.171</td><td class="num">29,7%</td></tr>
+              <tr><td class="rank">2</td><td>Santander Rio AM</td><td class="num">17.603</td><td class="num">15,7%</td></tr>
+              <tr><td class="rank">3</td><td>ICBC Investments</td><td class="num">25.172</td><td class="num">22,5%</td></tr>
+              <tr><td class="rank">4</td><td>Adcap AM</td><td class="num">10.805</td><td class="num">9,7%</td></tr>
+              <tr><td class="rank">5</td><td>Balanz</td><td class="num">6.705</td><td class="num">6,0%</td></tr>
+              <tr><td class="rank">6</td><td>Max Capital</td><td class="num">3.011</td><td class="num">2,7%</td></tr>
+              <tr><td class="rank">7</td><td>CMF AM</td><td class="num">2.936</td><td class="num">2,6%</td></tr>
+              <tr><td class="rank">8</td><td>Lombard</td><td class="num">2.950</td><td class="num">2,6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Top Clientes — Futuros Mes</span>
+          <span class="card-tag">Abril 2026</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th class="rank">#</th><th>Gerente</th><th class="num">ARS</th><th class="num">%</th></tr></thead>
+            <tbody>
+              <tr><td class="rank">1</td><td>IAM (Industrial)</td><td class="num">7.448</td><td class="num">28,2%</td></tr>
+              <tr><td class="rank">2</td><td>Max Capital</td><td class="num">5.341</td><td class="num">20,2%</td></tr>
+              <tr><td class="rank">3</td><td>ICBC Investments</td><td class="num">4.224</td><td class="num">16,0%</td></tr>
+              <tr><td class="rank">4</td><td>Macro Fondos</td><td class="num">2.157</td><td class="num">8,2%</td></tr>
+              <tr><td class="rank">5</td><td>Zofingen</td><td class="num">1.805</td><td class="num">6,8%</td></tr>
+              <tr><td class="rank">6</td><td>Toronto</td><td class="num">3.919</td><td class="num">14,8%</td></tr>
+              <tr><td class="rank">7</td><td>Balanz</td><td class="num">1.064</td><td class="num">4,0%</td></tr>
+              <tr><td class="rank">8</td><td>Bull Market</td><td class="num">0</td><td class="num">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas clave -->
+    <div class="card full-width">
+      <div class="card-header"><span class="card-title">Alertas de Gestión Comercial</span></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div>
+            <div class="alert alert-opp">
+              <span class="alert-icon">🟢</span>
+              <div><strong>Oportunidad — Futuros/Rofex:</strong> IAM, ICBC y Max Capital son los principales operadores. El mercado Rofex tiene 406.115 contratos abiertos. DA tiene presencia fuerte pero aún por debajo del 5% objetivo en varios gerentes clave (Santander, Cocos, Gainvest).</div>
+            </div>
+            <div class="alert alert-opp">
+              <span class="alert-icon">🟢</span>
+              <div><strong>Oportunidad — Caución:</strong> Macro y Santander dominan. Adcap muestra fuerte acumulado 2026 ($39.676). Clientes con baja actividad en caución pero alto VA: Valiant, SBS, Mariva → potencial activación.</div>
+            </div>
+          </div>
+          <div>
+            <div class="alert alert-risk">
+              <span class="alert-icon">🔴</span>
+              <div><strong>Riesgo — Concentración Caución:</strong> TOP 3 (Macro + Santander + ICBC) representan ~68% del mes. Alta dependencia. Si uno de estos reduce operativa, el impacto es severo.</div>
+            </div>
+            <div class="alert alert-warn">
+              <span class="alert-icon">🟡</span>
+              <div><strong>Atención — Pellegrini:</strong> Por el momento no operará con DA. No incluir en proyecciones de corto plazo. Continuar relación institucional para reactivar en H2 2026.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE GENERAL -->
+
+
+  <!-- ════════════════════════════════ PAGE: CAUCION -->
+  <div class="page" id="page-caucion">
+    <div class="section-header">
+      <span class="section-title">Caución</span>
+      <span class="section-sub">Aranceles e Histórico</span>
+    </div>
+
+    <div class="grid-4">
+      <div class="kpi green">
+        <div class="kpi-label">Caución Abril 2026</div>
+        <div class="kpi-value sm">$111.863</div>
+        <div class="kpi-delta up">▲ Mejor mes del año</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Acumulado 2026 (4M)</div>
+        <div class="kpi-value sm">$396.781</div>
+        <div class="kpi-delta up">▲ $99.195/mes promedio</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total 2025</div>
+        <div class="kpi-value sm">$476.031</div>
+        <div class="kpi-delta neutral">$39.669/mes promedio</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total 2024</div>
+        <div class="kpi-value sm">$389.085</div>
+        <div class="kpi-delta neutral">Año base completo</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Evolución Caución Mensual (ARS)</span>
+          <span class="card-tag">Dic 23 → Abr 26</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap tall">
+            <canvas id="chartCaucionEvol"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Ranking Acumulado 2026 — Caución</span>
+          <span class="card-tag">Ene–Abr 2026</span>
+        </div>
+        <div class="card-body" style="padding:8px 0 0">
+          <div id="caucionRankingBars"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">Detalle por Cliente — Caución 2026</span>
+        <span class="card-tag">Acumulado + Mes + Var%</span>
+      </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Gerente / Cliente</th>
+              <th class="num">Abr-26</th>
+              <th class="num">Acum 2026</th>
+              <th class="num">Total 2025</th>
+              <th class="num">Total 2024</th>
+              <th class="num">Var 25→26 (4M)</th>
+              <th>Perfil</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="rank">1</td><td>Macro Fondos</td><td class="num">33.171</td><td class="num">123.197</td><td class="num">292.514</td><td class="num">115.608</td><td class="num up">▲ anualiz. +3x</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">2</td><td>Santander Rio AM</td><td class="num">17.603</td><td class="num">66.796</td><td class="num">156.688</td><td class="num">77.536</td><td class="num up">▲ ritmo similar</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">3</td><td>ICBC Investments</td><td class="num">25.172</td><td class="num">46.847</td><td class="num">—</td><td class="num">—</td><td class="num up">▲ Nuevo activo</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">4</td><td>Adcap AM</td><td class="num">10.805</td><td class="num">39.676</td><td class="num">—</td><td class="num">—</td><td class="num up">▲ Fuerte 2026</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">5</td><td>Balanz</td><td class="num">6.705</td><td class="num">43.533</td><td class="num">82.332</td><td class="num">66.519</td><td class="num down">▼ vs prom 2025</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">6</td><td>Max Capital</td><td class="num">3.011</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num neutral">—</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">7</td><td>CMF AM</td><td class="num">2.936</td><td class="num">8.140</td><td class="num">5.056</td><td class="num">5.679</td><td class="num up">▲ +61%</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">8</td><td>Lombard</td><td class="num">2.950</td><td class="num">10.903</td><td class="num">29.133</td><td class="num">1.401</td><td class="num neutral">Volátil</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">9</td><td>Provinfondos</td><td class="num">2.578</td><td class="num">13.297</td><td class="num">—</td><td class="num">—</td><td class="num up">▲ Creciendo</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">10</td><td>Ualintec</td><td class="num">1.069</td><td class="num">5.786</td><td class="num">20.641</td><td class="num">20.483</td><td class="num down">▼ Bajo ritmo</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+            <tr><td class="rank">11</td><td>Ciudad AM</td><td class="num">1.116</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num neutral">—</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">12</td><td>Industrial AM</td><td class="num">838</td><td class="num">2.974</td><td class="num">42.784</td><td class="num">97.902</td><td class="num down">▼ Caída severa</td><td><span class="tag tag-fidelized">CIA Mercantil Andina</span></td></tr>
+            <tr><td class="rank">13</td><td>Delta AM</td><td class="num">457</td><td class="num">2.029</td><td class="num">15.505</td><td class="num">23.885</td><td class="num down">▼ Tendencia baja</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">14</td><td>Consultatio AM</td><td class="num">266</td><td class="num">1.528</td><td class="num">12.084</td><td class="num">4.754</td><td class="num down">▼ Debajo 2025</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">15</td><td>IEB</td><td class="num">58</td><td class="num">258</td><td class="num">143</td><td class="num">0</td><td class="num up">▲ Creciendo</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+            <tr><td class="rank">16</td><td>Pellegrini</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num neutral">No operará</td><td><span class="tag tag-risk">Inactivo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Acciones comerciales -->
+    <div class="card full-width" style="margin-top:20px">
+      <div class="card-header"><span class="card-title">Acciones de Gestión Comercial — Caución</span></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div>
+            <div class="alert alert-opp">
+              <span class="alert-icon">🎯</span>
+              <div><strong>IAM / CIA Mercantil Andina:</strong> Caída de $42.784 (2025) a $2.974 acum. 2026. Aunque es cliente fidelizado, la caída en caución requiere conversación directa. Potencial recuperación con operatoria de cámaras. Prioridad Alta.</div>
+            </div>
+            <div class="alert alert-opp">
+              <span class="alert-icon">🎯</span>
+              <div><strong>Valiant / Pionero / VmosRigi:</strong> Sin registros en caución durante 2026 pero activos en VA. Proponer integración de caución a través de colateralización de sus posiciones actuales.</div>
+            </div>
+          </div>
+          <div>
+            <div class="alert alert-risk">
+              <span class="alert-icon">⚠️</span>
+              <div><strong>Concentración Caución:</strong> Macro (31%) + Santander (17%) + ICBC (23%) = 71% del mes. Riesgo si cualquiera reduce operativa. Diversificar activando Adcap, Balanz y CMF con programas de volumen.</div>
+            </div>
+            <div class="alert alert-info">
+              <span class="alert-icon">ℹ️</span>
+              <div><strong>SBS, Mariva, Quiron:</strong> Activos en VA pero muy bajos en caución. Pitch comercial: "uso la caución como herramienta de liquidez sobre tus mismas posiciones".</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE CAUCION -->
+
+
+  <!-- ════════════════════════════════ PAGE: ROFEX -->
+  <div class="page" id="page-rofex">
+    <div class="section-header">
+      <span class="section-title">Futuros / Rofex</span>
+      <span class="section-sub">Posición y Aranceles</span>
+    </div>
+
+    <div class="grid-4">
+      <div class="kpi blue">
+        <div class="kpi-label">Futuros Abril 2026</div>
+        <div class="kpi-value sm">$26.448</div>
+        <div class="kpi-delta up">▲ 2do ingreso del mes</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Acumulado 2026 (4M)</div>
+        <div class="kpi-value sm">$157.016</div>
+        <div class="kpi-delta up">▲ $39.254/mes prom.</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Contratos Mercado</div>
+        <div class="kpi-value sm">406.115</div>
+        <div class="kpi-delta neutral">Al 30/01 (referencia)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Objetivo DA (5% mercado)</div>
+        <div class="kpi-value sm">70.000</div>
+        <div class="kpi-delta neutral">contratos objetivo</div>
+      </div>
+    </div>
+
+    <!-- Escenarios -->
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">Escenarios de Ingreso — Rofex 2026</span>
+        <span class="card-tag">Fuente: 1816 + DA — Basado en pág. 24 del informe</span>
+      </div>
+      <div class="card-body">
+        <div class="scenario-grid">
+          <div class="scenario-card sc-bear">
+            <div class="sc-label">🐻 Escenario Bajo</div>
+            <div class="sc-val">$18.000/mes</div>
+            <div class="sc-desc">Tipo de cambio estable, menor volatilidad, reducción de operativa en fondos claves. 3% del mercado objetivo.</div>
+          </div>
+          <div class="scenario-card sc-base">
+            <div class="sc-label">📊 Escenario Base</div>
+            <div class="sc-val">$26.448/mes</div>
+            <div class="sc-desc">Ritmo actual mantenido. Activación de Santander, Cocos y Gainvest al 5% de su posición. ~$316K anuales.</div>
+          </div>
+          <div class="scenario-card sc-bull">
+            <div class="sc-label">🐂 Escenario Alto</div>
+            <div class="sc-val">$45.000/mes</div>
+            <div class="sc-desc">Activación de 3–5 gerentes nuevos (Schroder: -3.430 contratos faltantes, SBS: -287). Dolarización impulsa volumen.</div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="grid-2-1">
+          <div>
+            <div class="card-title" style="margin-bottom:14px; font-size:11px; color:var(--da-navy);">POSICIÓN ROFEX POR GERENTE — Faltante para 5% objetivo</div>
+            <table class="tbl">
+              <thead><tr><th>Gerente</th><th class="num">Total ARS</th><th class="num">Pos. DA Hoy</th><th class="num">Faltante Ctos</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td>IAM (Industrial)</td><td class="num">-8.959M</td><td class="num">11.575</td><td class="num up">—</td><td><span class="tag tag-fidelized">Cubierto</span></td></tr>
+                <tr><td>ICBC Investments</td><td class="num">20.888M</td><td class="num">4.000</td><td class="num">—</td><td><span class="tag tag-fidelized">Cubierto</span></td></tr>
+                <tr><td>Max Capital</td><td class="num">-53.622M</td><td class="num">29.686</td><td class="num up">—</td><td><span class="tag tag-fidelized">Cubierto</span></td></tr>
+                <tr><td>Pionero</td><td class="num">44.655M</td><td class="num">15.700</td><td class="num">—</td><td><span class="tag tag-fidelized">Cubierto</span></td></tr>
+                <tr><td>Allaria</td><td class="num">20.287M</td><td class="num">5.600</td><td class="num">—</td><td><span class="tag tag-fidelized">Cubierto</span></td></tr>
+                <tr><td>Zofingen</td><td class="num">9.826M</td><td class="num">6.653</td><td class="num">—</td><td><span class="tag tag-fidelized">Cubierto</span></td></tr>
+                <tr><td>Santander</td><td class="num">53.622M</td><td class="num">0</td><td class="num down">-1.675 ctos</td><td><span class="tag tag-risk">Faltante</span></td></tr>
+                <tr><td>Schroder</td><td class="num">109.846M</td><td class="num">0</td><td class="num down">-3.431 ctos</td><td><span class="tag tag-risk">Faltante</span></td></tr>
+                <tr><td>SBS</td><td class="num">9.191M</td><td class="num">0</td><td class="num down">-287 ctos</td><td><span class="tag tag-risk">Faltante</span></td></tr>
+                <tr><td>Cocos</td><td class="num">14.775M</td><td class="num">0</td><td class="num down">-461 ctos</td><td><span class="tag tag-risk">Faltante</span></td></tr>
+                <tr><td>Gainvest</td><td class="num">7.385M</td><td class="num">0</td><td class="num down">-231 ctos</td><td><span class="tag tag-risk">Faltante</span></td></tr>
+                <tr><td>Consultatio</td><td class="num">6.346M</td><td class="num">0</td><td class="num down">-198 ctos</td><td><span class="tag tag-target">Target</span></td></tr>
+                <tr><td>BAVSA</td><td class="num">Neg.</td><td class="num">0</td><td class="num neutral">N/A</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+                <tr><td>Ualintec</td><td class="num">0</td><td class="num">0</td><td class="num neutral">—</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:14px; font-size:11px; color:var(--da-navy);">Acumulado 2026 — Futuros</div>
+            <div class="chart-wrap tall">
+              <canvas id="chartFuturosAcum"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full-width" style="margin-top:20px">
+      <div class="card-header"><span class="card-title">Acciones Comerciales — Futuros/Rofex</span></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div>
+            <div class="alert alert-opp"><span class="alert-icon">🎯</span><div><strong>Santander Rio:</strong> -1.675 contratos para llegar al 5% objetivo. Tiene $53.622M en posición total. Es el mayor faltante factible. Contacto directo de mesa.</div></div>
+            <div class="alert alert-opp"><span class="alert-icon">🎯</span><div><strong>Schroder:</strong> Mayor posición del mercado ($109.846M). Ningún contrato con DA. Es el mayor potencial de captación. Relación nueva a construir.</div></div>
+            <div class="alert alert-info"><span class="alert-icon">ℹ️</span><div><strong>Toronto:</strong> Acumuló $5.561 en futuros 2026. Gestión activa, continuar con propuesta de optimización de contratos forward.</div></div>
+          </div>
+          <div>
+            <div class="alert alert-warn"><span class="alert-icon">🟡</span><div><strong>BAVSA / Ualintec / IEB:</strong> Operarán por reciprocidad. Mantener propuestas activas pero no priorizar esfuerzo comercial. Reciprocidad funciona sola.</div></div>
+            <div class="alert alert-risk"><span class="alert-icon">⚠️</span><div><strong>MegaQM:</strong> Posición Rofex de 62.418M — el mayor no conectado. Sin contratos con DA. Cliente "difícil" similar a FIMA. Acercamiento institucional sugerido vs comercial directo.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE ROFEX -->
+
+
+  <!-- ════════════════════════════════ PAGE: ACCIONES -->
+  <div class="page" id="page-acciones">
+    <div class="section-header">
+      <span class="section-title">Acciones / CEDEARs</span>
+      <span class="section-sub">Aranceles Renta Variable</span>
+    </div>
+
+    <div class="grid-4">
+      <div class="kpi">
+        <div class="kpi-label">Acciones Abril 2026</div>
+        <div class="kpi-value sm">$2.411</div>
+        <div class="kpi-delta neutral">Baja participación relativa</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Acumulado 2026 (4M)</div>
+        <div class="kpi-value sm">$13.579</div>
+        <div class="kpi-delta neutral">$3.395/mes promedio</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total 2025</div>
+        <div class="kpi-value sm">$22.019</div>
+        <div class="kpi-delta neutral">Ritmo 2026 aprox. igual</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">Clientes Activos</div>
+        <div class="kpi-value sm">6 / 36</div>
+        <div class="kpi-delta down">▼ Solo 17% del panel</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Ranking Acciones Acum. 2026</span>
+          <span class="card-tag">Ene–Abr 2026</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th class="rank">#</th><th>Gerente</th><th class="num">Mes</th><th class="num">Acum 2026</th><th class="num">2025</th><th>Perfil</th></tr></thead>
+            <tbody>
+              <tr><td class="rank">1</td><td>ICBC Investments</td><td class="num">1.196</td><td class="num">5.814</td><td class="num">—</td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td class="rank">2</td><td>Adcap AM</td><td class="num">665</td><td class="num">1.043</td><td class="num">—</td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td class="rank">3</td><td>Quiron AM</td><td class="num">391</td><td class="num">1.524</td><td class="num">—</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">4</td><td>Provinfondos</td><td class="num">133</td><td class="num">781</td><td class="num">—</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">5</td><td>Ualintec</td><td class="num">6</td><td class="num">86</td><td class="num">325</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+              <tr><td class="rank">6</td><td>Toronto</td><td class="num">19</td><td class="num">19</td><td class="num">0</td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td class="rank">—</td><td>Industrial AM</td><td class="num">0</td><td class="num">0</td><td class="num">240</td><td><span class="tag tag-fidelized">CIA Mercantil Andina</span></td></tr>
+              <tr><td class="rank">—</td><td>Bull Market</td><td class="num">0</td><td class="num">0</td><td class="num">3.706</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">—</td><td>Pellegrini</td><td class="num">0</td><td class="num">0</td><td class="num">8.435</td><td><span class="tag tag-risk">No operará</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Acciones — Evolución Mensual</span>
+          <span class="card-tag">Ene–Abr 2026</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap">
+            <canvas id="chartAccionesEvol"></canvas>
+          </div>
+          <hr class="divider" style="margin:10px 0">
+          <div class="alert alert-info">
+            <span class="alert-icon">ℹ️</span>
+            <div><strong>Oportunidad clave:</strong> Pellegrini tenía $8.435 en acciones 2025 y es el mayor potencial inactivo. Bull Market generó $3.706 en 2025 pero $0 en 2026. Reactivar estas cuentas duplicaría el ingreso por este producto.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header"><span class="card-title">Acciones Comerciales — Renta Variable</span></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div>
+            <div class="alert alert-opp"><span class="alert-icon">🎯</span><div><strong>Bull Market AM:</strong> Generó $3.706 en 2025, $0 en 2026. Misma mesa. Retomar operativa de equity con propuesta de nuevos CEDEARs (tecnología US a través de MEP).</div></div>
+            <div class="alert alert-opp"><span class="alert-icon">🎯</span><div><strong>Macro Fondos / Delta AM:</strong> Fuertes en caución pero nulos en acciones. Propuesta: cartera mixta, escalado de riesgo para fondos de renta mixta que ya gestionan.</div></div>
+          </div>
+          <div>
+            <div class="alert alert-risk"><span class="alert-icon">⚠️</span><div><strong>Alta dependencia en ICBC:</strong> 1 cliente = 43% del ingreso mensual en acciones. Si ICBC reduce operativa, el producto colapsa. Diversificar urgente.</div></div>
+            <div class="alert alert-warn"><span class="alert-icon">🟡</span><div><strong>FIMA:</strong> Cliente complicado de entrar. No priorizar en acciones a corto plazo. Mantener relación institucional. Evaluar en H2 2026 con nuevo equipo de contacto.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE ACCIONES -->
+
+
+  <!-- ════════════════════════════════ PAGE: VA USD -->
+  <div class="page" id="page-va">
+    <div class="section-header">
+      <span class="section-title">VA USD — Volumen Administrado</span>
+      <span class="section-sub">Evolución Jul 2025 → Abr 2026</span>
+    </div>
+
+    <div class="grid-4">
+      <div class="kpi green">
+        <div class="kpi-label">VA Abril 2026</div>
+        <div class="kpi-value sm">$410.850</div>
+        <div class="kpi-delta down">▼ -4,2% vs Mar-26</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">VA Marzo 2026</div>
+        <div class="kpi-value sm">$429.053</div>
+        <div class="kpi-delta up">▲ Pico del período</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">VA Enero 2026</div>
+        <div class="kpi-value sm">$418.598</div>
+        <div class="kpi-delta neutral">Fuerte inicio de año</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">VA Jul 2025 (base)</div>
+        <div class="kpi-value sm">$142.012</div>
+        <div class="kpi-delta up">▲ +189% al pico Mar-26</div>
+      </div>
+    </div>
+
+    <!-- VA Evolution chart -->
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">Evolución VA USD por Mes</span>
+        <span class="card-tag">Jul 2025 → Abr 2026</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap tall">
+          <canvas id="chartVAEvol"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- VA por cliente Abril 2026 -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Top VA — Institucionales Abr 2026</span>
+          <span class="card-tag">USD</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th class="rank">#</th><th>Cliente</th><th class="num">VA USD</th><th class="num">%</th><th>Perfil</th></tr></thead>
+            <tbody>
+              <tr><td class="rank">1</td><td>ICBC Investments</td><td class="num">166.693</td><td class="num">40,6%</td><td><span class="tag tag-risk">Concentración</span></td></tr>
+              <tr><td class="rank">2</td><td>Macro Fondos</td><td class="num">87.769</td><td class="num">21,4%</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">3</td><td>CIA Mercantil Andina</td><td class="num">42.377</td><td class="num">10,3%</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">4</td><td>Valiant AM</td><td class="num">20.248</td><td class="num">4,9%</td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td class="rank">5</td><td>Santander Rio AM</td><td class="num">14.384</td><td class="num">3,5%</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">6</td><td>Mariva AM</td><td class="num">7.935</td><td class="num">1,9%</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td class="rank">7</td><td>SBS AM</td><td class="num">2.969</td><td class="num">0,7%</td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td class="rank">8</td><td>Max Capital</td><td class="num">1.579</td><td class="num">0,4%</td><td><span class="tag tag-target">Target</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Corporates + VA Total</span>
+          <span class="card-tag">Abr 2026</span>
+        </div>
+        <div class="card-body">
+          <div style="margin-bottom:12px">
+            <div class="kpi-label">First Data Cono Sur (Corpo)</div>
+            <div class="kpi-value sm" style="font-size:18px">$56.635 USD</div>
+            <div class="kpi-delta up" style="margin-top:4px">▲ Cliente corporativo clave</div>
+          </div>
+          <hr class="divider" style="margin:10px 0">
+          <div class="alert alert-risk">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>ALERTA: Concentración VA</strong><br>ICBC representa el 40,6% del VA total. Un movimiento de ese cliente impacta directamente en aranceles. Riesgo sistémico máximo.</div>
+          </div>
+          <div class="alert alert-opp" style="margin-top:10px">
+            <span class="alert-icon">🟢</span>
+            <div><strong>VmosRigi / First Data:</strong> Corporates activos. Explorar si hay más operaciones de tipo "Corpo" similares que puedan incorporarse al VA total.</div>
+          </div>
+          <div class="chart-wrap short" style="margin-top:14px">
+            <canvas id="chartVAMix"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE VA -->
+
+
+  <!-- ════════════════════════════════ PAGE: RANKING -->
+  <div class="page" id="page-ranking">
+    <div class="section-header">
+      <span class="section-title">Ranking de Clientes</span>
+      <span class="section-sub">Total Acumulado 2026 · Todos los productos</span>
+    </div>
+
+    <div class="grid-3">
+      <div class="kpi">
+        <div class="kpi-label">Total Acum 2026 (Caución)</div>
+        <div class="kpi-value sm">$396.781</div>
+        <div class="kpi-delta up">▲ 4 meses</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Acum 2026 (Futuros)</div>
+        <div class="kpi-value sm">$157.016</div>
+        <div class="kpi-delta up">▲ 4 meses</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total Acum 2026 (Acciones)</div>
+        <div class="kpi-value sm">$13.579</div>
+        <div class="kpi-delta neutral">4 meses</div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">Ranking Total Consolidado Acumulado 2026</span>
+        <span class="card-tag">Suma Caución + Futuros + Acciones</span>
+      </div>
+      <div class="tbl-scroll">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Cliente</th>
+              <th class="num">Caución 2026</th>
+              <th class="num">Futuros 2026</th>
+              <th class="num">Acciones 2026</th>
+              <th class="num">TOTAL 2026</th>
+              <th class="num">TOTAL 2025</th>
+              <th class="num">Var YoY</th>
+              <th>Perfil comercial</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#fffbf0"><td class="rank">1</td><td><strong>Macro Fondos</strong></td><td class="num">123.197</td><td class="num">9.588</td><td class="num">0</td><td class="num"><strong>132.785</strong></td><td class="num">351.358</td><td class="num down">▼ (pace annual)</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">2</td><td>Santander Rio AM</td><td class="num">66.796</td><td class="num">0</td><td class="num">0</td><td class="num"><strong>66.796</strong></td><td class="num">156.688</td><td class="num neutral">Similar pace</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr style="background:#fffbf0"><td class="rank">3</td><td><strong>IAM (Industrial)</strong></td><td class="num">2.974</td><td class="num">17.447</td><td class="num">0</td><td class="num"><strong>56.270</strong></td><td class="num">151.022</td><td class="num down">▼ Caída caución</td><td><span class="tag tag-fidelized">CIA Mercantil Andina</span></td></tr>
+            <tr><td class="rank">4</td><td>ICBC Investments</td><td class="num">46.847</td><td class="num">8.595</td><td class="num">5.814</td><td class="num"><strong>61.256</strong></td><td class="num">—</td><td class="num up">▲ Nuevo activo</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr style="background:#fffbf0"><td class="rank">5</td><td><strong>Balanz</strong></td><td class="num">43.533</td><td class="num">1.555</td><td class="num">0</td><td class="num"><strong>45.088</strong></td><td class="num">102.797</td><td class="num down">▼ pace slow</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">6</td><td>Max Capital</td><td class="num">—</td><td class="num">22.884</td><td class="num">0</td><td class="num"><strong>22.884</strong></td><td class="num">—</td><td class="num up">▲ Fuerte futuros</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">7</td><td>Adcap AM</td><td class="num">39.676</td><td class="num">155</td><td class="num">1.043</td><td class="num"><strong>40.874</strong></td><td class="num">—</td><td class="num up">▲ 2026 fuerte</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">8</td><td>Provinfondos</td><td class="num">13.297</td><td class="num">0</td><td class="num">781</td><td class="num"><strong>14.078</strong></td><td class="num">—</td><td class="num up">▲ Creciendo</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">9</td><td>CMF AM</td><td class="num">8.140</td><td class="num">0</td><td class="num">0</td><td class="num"><strong>8.140</strong></td><td class="num">5.056</td><td class="num up">▲ +61%</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">10</td><td>Toronto</td><td class="num">—</td><td class="num">5.561</td><td class="num">19</td><td class="num"><strong>5.580</strong></td><td class="num">7.993</td><td class="num down">▼ Menor</td><td><span class="tag tag-target">Target</span></td></tr>
+            <tr><td class="rank">11</td><td>Lombard</td><td class="num">10.903</td><td class="num">0</td><td class="num">0</td><td class="num"><strong>10.903</strong></td><td class="num">29.133</td><td class="num down">▼ pace 2025 mejor</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">12</td><td>Delta AM</td><td class="num">2.029</td><td class="num">0</td><td class="num">0</td><td class="num"><strong>2.029</strong></td><td class="num">15.505</td><td class="num down">▼ Caída brusca</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">13</td><td>Ualintec</td><td class="num">5.786</td><td class="num">0</td><td class="num">86</td><td class="num"><strong>5.872</strong></td><td class="num">21.011</td><td class="num down">▼ Bajo ritmo</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+            <tr><td class="rank">14</td><td>Zofingen</td><td class="num">1.145</td><td class="num">3.213</td><td class="num">0</td><td class="num"><strong>4.358</strong></td><td class="num">—</td><td class="num up">▲ Creciendo</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">15</td><td>Quiron AM</td><td class="num">—</td><td class="num">—</td><td class="num">1.524</td><td class="num"><strong>1.524</strong></td><td class="num">—</td><td class="num up">▲ Nuevo</td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+            <tr><td class="rank">—</td><td>IEB SA</td><td class="num">258</td><td class="num">0</td><td class="num">0</td><td class="num"><strong>258</strong></td><td class="num">3.841</td><td class="num down">▼ Mínimo</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+            <tr><td class="rank">—</td><td>BAVSA Fondos</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num"><strong>0</strong></td><td class="num">—</td><td class="num neutral">—</td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+            <tr><td class="rank">—</td><td>Pellegrini</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num"><strong>0</strong></td><td class="num">12.838</td><td class="num down">▼ Inactivo</td><td><span class="tag tag-risk">No operará</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card full-width" style="margin-top:20px">
+      <div class="card-header"><span class="card-title">Ranking Acumulado 2026 — Visual</span></div>
+      <div class="card-body">
+        <div class="chart-wrap tall">
+          <canvas id="chartRankingTotal"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE RANKING -->
+
+
+  <!-- ════════════════════════════════ PAGE: INTERANUAL -->
+  <div class="page" id="page-interanual">
+    <div class="section-header">
+      <span class="section-title">Comparativa Interanual</span>
+      <span class="section-sub">2024 vs 2025 vs 2026 (ritmo anualizado)</span>
+    </div>
+
+    <div class="grid-3">
+      <div class="kpi">
+        <div class="kpi-label">Caución 2024 (Total)</div>
+        <div class="kpi-value sm">$389.085</div>
+        <div class="kpi-delta neutral">Año base</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Caución 2025 (Total)</div>
+        <div class="kpi-value sm">$476.031</div>
+        <div class="kpi-delta up">▲ +22,4% vs 2024</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Caución 2026 (4M) → Anualiz.</div>
+        <div class="kpi-value sm">~$1.190.000</div>
+        <div class="kpi-delta up">▲ +150% vs 2025 si mantiene</div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">Evolución Caución — Comparativa 2024 vs 2025 vs 2026</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap tall">
+          <canvas id="chartInteranualCaucion"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Clientes con Crecimiento 2024→2026</span>
+          <span class="card-tag">Caución</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th>Cliente</th><th class="num">2024</th><th class="num">2025</th><th class="num">2026 (4M)</th><th class="num">Tendencia</th></tr></thead>
+            <tbody>
+              <tr><td>CMF AM</td><td class="num">5.679</td><td class="num">5.056</td><td class="num">8.140</td><td class="num up">▲▲ Fuerte</td></tr>
+              <tr><td>IEB SA</td><td class="num">0</td><td class="num">143</td><td class="num">258</td><td class="num up">▲ Nuevo</td></tr>
+              <tr><td>Macro Fondos</td><td class="num">115.608</td><td class="num">292.514</td><td class="num">123.197</td><td class="num up">▲ Sólido</td></tr>
+              <tr><td>Lombard</td><td class="num">1.401</td><td class="num">29.133</td><td class="num">10.903</td><td class="num neutral">Volátil</td></tr>
+              <tr><td>Provinfondos</td><td class="num">0</td><td class="num">0</td><td class="num">13.297</td><td class="num up">▲ Activado</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Clientes con Caída — Alerta</span>
+          <span class="card-tag">Caución</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th>Cliente</th><th class="num">2024</th><th class="num">2025</th><th class="num">2026 (4M)</th><th class="num">Var</th></tr></thead>
+            <tbody>
+              <tr><td>Industrial AM</td><td class="num">97.902</td><td class="num">42.784</td><td class="num">2.974</td><td class="num down">▼▼ Crítico</td></tr>
+              <tr><td>Delta AM</td><td class="num">23.885</td><td class="num">15.505</td><td class="num">2.029</td><td class="num down">▼▼ Crítico</td></tr>
+              <tr><td>Ualintec</td><td class="num">20.483</td><td class="num">20.641</td><td class="num">5.786</td><td class="num down">▼ Bajo ritmo</td></tr>
+              <tr><td>Balanz</td><td class="num">66.519</td><td class="num">82.332</td><td class="num">43.533</td><td class="num down">▼ Pace menor</td></tr>
+              <tr><td>Consultatio</td><td class="num">4.754</td><td class="num">12.084</td><td class="num">1.528</td><td class="num down">▼▼ Crítico</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header"><span class="card-title">Futuros/Rofex — Comparativa Interanual</span></div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="chartInteranualFuturos"></canvas>
+        </div>
+        <div class="grid-3" style="margin-top:16px">
+          <div class="kpi" style="padding:12px 14px">
+            <div class="kpi-label">Futuros 2024</div>
+            <div class="kpi-value sm" style="font-size:16px">$168.464</div>
+            <div class="kpi-delta neutral">Año base</div>
+          </div>
+          <div class="kpi" style="padding:12px 14px">
+            <div class="kpi-label">Futuros 2025</div>
+            <div class="kpi-value sm" style="font-size:16px">$254.047</div>
+            <div class="kpi-delta up">▲ +50,8% vs 2024</div>
+          </div>
+          <div class="kpi green" style="padding:12px 14px">
+            <div class="kpi-label">Futuros 2026 (4M → Anualiz.)</div>
+            <div class="kpi-value sm" style="font-size:16px">~$471.000</div>
+            <div class="kpi-delta up">▲ +85% vs 2025 si mantiene</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE INTERANUAL -->
+
+
+  <!-- ════════════════════════════════ PAGE: OPORTUNIDADES -->
+  <div class="page" id="page-oportunidades">
+    <div class="section-header">
+      <span class="section-title">Oportunidades y Amenazas</span>
+      <span class="section-sub">Análisis Comercial Estratégico</span>
+    </div>
+
+    <div class="grid-2">
+      <!-- Oportunidades -->
+      <div class="card">
+        <div class="card-header" style="background:#E8F5E9; border-bottom-color:#C8E6C9">
+          <span class="card-title" style="color:var(--da-green)">🟢 Oportunidades de Crecimiento</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-opp">
+            <span class="alert-icon">1️⃣</span>
+            <div><strong>IAM / CIA Mercantil Andina:</strong> Cliente fidelizado con caída brutal en caución (de $42.784 a $2.974 en 4M). Es una oportunidad de recuperación. Tienen VA alto ($42.377 USD). Acción: proponer facilidades para incrementar volumen de cauciones sobre sus posiciones actuales.</div>
+          </div>
+          <div class="alert alert-opp">
+            <span class="alert-icon">2️⃣</span>
+            <div><strong>Schroder (Rofex):</strong> Mayor posición del mercado en futuros ($109.846M) pero cero contratos con DA. Potencial de +3.430 contratos. Acción: presentación institucional de DA como clearing preferencial para Rofex.</div>
+          </div>
+          <div class="alert alert-opp">
+            <span class="alert-icon">3️⃣</span>
+            <div><strong>Valiant AM:</strong> VA alto ($20.248 USD Abr-26) pero sin caución ni futuros registrados. Cliente de tipo "target". Acción: propuesta integral (caución + Rofex) aprovechando relación existente de VA.</div>
+          </div>
+          <div class="alert alert-opp">
+            <span class="alert-icon">4️⃣</span>
+            <div><strong>SBS Asset Management:</strong> Presente en VA y futuros ($492 Abr), sin caución. Creció en 2024 ($9.190M en Rofex). Acción: incrementar presencia en caución. Ya tiene relación operativa.</div>
+          </div>
+          <div class="alert alert-opp">
+            <span class="alert-icon">5️⃣</span>
+            <div><strong>Consultatio AM:</strong> Tuvo $12.084 en caución 2025, cayó a $1.528 en 4M 2026. Misma estructura de fondo. Acción: recuperar con pricing diferencial en tasas de caución.</div>
+          </div>
+          <div class="alert alert-opp">
+            <span class="alert-icon">6️⃣</span>
+            <div><strong>Bull Market AM:</strong> $3.706 en acciones 2025, $0 en 2026. Misma mesa activa. Acción: reactivar operativa de CEDEARs/equity. Rápida de implementar.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amenazas -->
+      <div class="card">
+        <div class="card-header" style="background:#FFEBEE; border-bottom-color:#FFCDD2">
+          <span class="card-title" style="color:var(--da-red)">🔴 Amenazas y Riesgos</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-risk">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Concentración ICBC — VA (40,6%):</strong> Un solo cliente representa más del 40% del VA y es el #1 en acciones. Si reduce o migra operativa a otro broker, el impacto en ingresos es inmediato y significativo. Diversificación urgente.</div>
+          </div>
+          <div class="alert alert-risk">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Concentración Caución TOP3 (68%):</strong> Macro + Santander + ICBC concentran casi 3/4 del ingreso mensual de caución. Dependencia extrema. Cualquier volatilidad operativa de estos tres destruye el mes.</div>
+          </div>
+          <div class="alert alert-risk">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Caída Delta AM:</strong> De $23.885 (2024) → $15.505 (2025) → $2.029 (4M 2026). Tendencia de salida. Investigar causa: ¿migró a otro broker? ¿Cambio de estrategia del fondo?</div>
+          </div>
+          <div class="alert alert-warn">
+            <span class="alert-icon">🟡</span>
+            <div><strong>Pellegrini — Inactivo:</strong> $12.838 de aranceles en 2025 ahora cero. Impacto $12.838 anuales en base de ingresos. Trabajar para reactivación en H2 2026.</div>
+          </div>
+          <div class="alert alert-warn">
+            <span class="alert-icon">🟡</span>
+            <div><strong>FIMA:</strong> Cliente complicado de entrar. No desperdiciar recursos comerciales a corto plazo. Mantener presencia institucional únicamente.</div>
+          </div>
+          <div class="alert alert-warn">
+            <span class="alert-icon">🟡</span>
+            <div><strong>MegaQM / Galicia / Schroder:</strong> Grandes posiciones en el mercado sin relación con DA. Si atraen a otro IB como agente preferencial, consolidan su operatoria fuera de DA permanentemente.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mapa de clientes -->
+    <div class="card full-width">
+      <div class="card-header"><span class="card-title">Mapa de Clientes por Prioridad Comercial</span></div>
+      <div class="card-body">
+        <div style="overflow-x:auto">
+          <table class="tbl" style="min-width:700px">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Situación</th>
+                <th>Potencial</th>
+                <th>Acción Sugerida</th>
+                <th>Prioridad</th>
+                <th>Perfil</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Schroder</td><td>Sin relación en futuros</td><td>🟢 Alto — 3.430 contratos</td><td>Presentación institucional Rofex</td><td><strong>🔥 MUY ALTA</strong></td><td><span class="tag tag-target">Target Nuevo</span></td></tr>
+              <tr><td>IAM / Mercantil Andina</td><td>Caución caída 93%</td><td>🟢 Alto — recuperación</td><td>Propuesta caución sobre posiciones VA</td><td><strong>🔥 MUY ALTA</strong></td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td>Valiant AM</td><td>Solo VA, sin caución/futuros</td><td>🟢 Alto — $20k USD VA</td><td>Pitch producto integral</td><td><strong>🔥 ALTA</strong></td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td>Santander Rio</td><td>Solo caución, sin Rofex</td><td>🟡 Medio — activación Rofex</td><td>Onboarding Rofex (faltante -1.675 ctos)</td><td><strong>⬆ ALTA</strong></td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td>Bull Market</td><td>$0 acciones 2026 vs $3.7k 2025</td><td>🟡 Medio — reactivar equity</td><td>Contacto mesa equity, nuevo flow</td><td><strong>⬆ MEDIA</strong></td><td><span class="tag tag-fidelized">Fidelizado</span></td></tr>
+              <tr><td>Consultatio AM</td><td>Caución cayó 87%</td><td>🟡 Medio — precio/competencia</td><td>Repricing + propuesta diferencial</td><td><strong>⬆ MEDIA</strong></td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td>SBS AM</td><td>Activo pero pequeño</td><td>🟡 Medio — ampliar productos</td><td>Incorporar caución al portfolio</td><td><strong>⬆ MEDIA</strong></td><td><span class="tag tag-target">Target</span></td></tr>
+              <tr><td>BAVSA / IEB / Ualintec</td><td>Reciprocidad</td><td>🔵 Bajo — relación bilateral</td><td>Mantener activo, no presionar</td><td><strong>→ BAJA</strong></td><td><span class="tag tag-reciprocity">Reciprocidad</span></td></tr>
+              <tr><td>Pellegrini</td><td>Inactivo por decisión</td><td>🔴 Bloqueado H1 2026</td><td>Mantener relación institucional</td><td><strong>→ ESPERA</strong></td><td><span class="tag tag-risk">No operará</span></td></tr>
+              <tr><td>FIMA</td><td>Difícil de entrar</td><td>🔴 Bajo acceso</td><td>Relación institucional únicamente</td><td><strong>→ BAJA</strong></td><td><span class="tag tag-complex">Complejo</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE OPORTUNIDADES -->
+
+
+  <!-- ════════════════════════════════ PAGE: ESCENARIOS -->
+  <div class="page" id="page-escenarios">
+    <div class="section-header">
+      <span class="section-title">Escenarios Rofex 2026</span>
+      <span class="section-sub">Proyección Ingresos · Fuente: 1816 + DA</span>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header">
+        <span class="card-title">Contexto de Mercado Rofex — Fuente 1816 (Pág. 24 referencia)</span>
+      </div>
+      <div class="card-body">
+        <div class="grid-3">
+          <div class="alert alert-info">
+            <span class="alert-icon">📊</span>
+            <div><strong>Mercado Rofex total:</strong> 406.115 contratos abiertos al 30/01/2026. Precio promedio contrato: ARS 1.601. Valor total: ~$650.000M. Industria FCI tiene $96.574B AUM (Apr-26), Money Market domina con $57.078B.</div>
+          </div>
+          <div class="alert alert-info">
+            <span class="alert-icon">💵</span>
+            <div><strong>Tipo de cambio referencia:</strong> FX: ARS 1.420 (referencia interna). Objetivo DA: que cada SGF tenga el 5% de su posición total operada a través de DA. Actualmente solo algunos superan ese umbral.</div>
+          </div>
+          <div class="alert alert-opp">
+            <span class="alert-icon">🎯</span>
+            <div><strong>Potencial máximo:</strong> Si todos los gerentes alcanzaran el 5% con DA, el volumen implicaría ~70.000 contratos en DA. Al precio actual (~ARS 1.601/cto) = ingresos potenciales muy superiores al ritmo actual.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card full-width" style="margin-top:20px">
+      <div class="card-header">
+        <span class="card-title">Simulador de Escenarios de Ingresos Rofex 2026</span>
+      </div>
+      <div class="card-body">
+        <div class="scenario-grid">
+          <div class="scenario-card sc-bear">
+            <div class="sc-label">🐻 Escenario Pesimista</div>
+            <div class="sc-val">$18.000/mes</div>
+            <div class="sc-desc" style="margin-bottom:12px">Tipo de cambio estable, menor volatilidad implícita, operativa reducida de fondos principales</div>
+            <hr style="border:none;border-top:1px solid #FFCDD2;margin:8px 0">
+            <div style="text-align:left;font-size:11px">
+              <div style="margin-bottom:4px">📅 Anualizado: <strong>$216.000</strong></div>
+              <div style="margin-bottom:4px">📉 vs 2025 ($254k): <span style="color:var(--da-red)">-15%</span></div>
+              <div>⚙️ Activación: Solo clientes actuales</div>
+            </div>
+          </div>
+          <div class="scenario-card sc-base">
+            <div class="sc-label">📊 Escenario Base</div>
+            <div class="sc-val">$35.000/mes</div>
+            <div class="sc-desc" style="margin-bottom:12px">Ritmo abril mantenido + activación Santander en Rofex (-1.675 ctos) + mejora en 2-3 gerentes</div>
+            <hr style="border:none;border-top:1px solid #C8E6C9;margin:8px 0">
+            <div style="text-align:left;font-size:11px">
+              <div style="margin-bottom:4px">📅 Anualizado: <strong>$420.000</strong></div>
+              <div style="margin-bottom:4px">📈 vs 2025 ($254k): <span style="color:var(--da-green)">+65%</span></div>
+              <div>⚙️ Requiere: Onboarding Santander + SBS</div>
+            </div>
+          </div>
+          <div class="scenario-card sc-bull">
+            <div class="sc-label">🐂 Escenario Optimista</div>
+            <div class="sc-val">$60.000/mes</div>
+            <div class="sc-desc" style="margin-bottom:12px">Captación Schroder (-3.430 ctos) + Santander + nuevos gerentes + volatilidad cambiaria alta</div>
+            <hr style="border:none;border-top:1px solid #BBDEFB;margin:8px 0">
+            <div style="text-align:left;font-size:11px">
+              <div style="margin-bottom:4px">📅 Anualizado: <strong>$720.000</strong></div>
+              <div style="margin-bottom:4px">📈 vs 2025 ($254k): <span style="color:var(--da-blue)">+183%</span></div>
+              <div>⚙️ Requiere: Schroder + Santander + MegaQM</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="grid-2">
+          <div>
+            <div class="card-title" style="margin-bottom:12px;font-size:11px">Proyección de Ingresos Anuales por Escenario</div>
+            <div class="chart-wrap">
+              <canvas id="chartEscenarios"></canvas>
+            </div>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:12px;font-size:11px">Drivers Clave por Escenario</div>
+            <table class="tbl">
+              <thead><tr><th>Driver</th><th>Pesimista</th><th>Base</th><th>Optimista</th></tr></thead>
+              <tbody>
+                <tr><td>Clientes Rofex activos</td><td class="num">8</td><td class="num">11</td><td class="num">15+</td></tr>
+                <tr><td>Contratos DA (est.)</td><td class="num">~16.000</td><td class="num">~25.000</td><td class="num">~45.000</td></tr>
+                <tr><td>% del mercado</td><td class="num">4%</td><td class="num">6%</td><td class="num">11%</td></tr>
+                <tr><td>Volatilidad FX</td><td class="num">Baja</td><td class="num">Media</td><td class="num">Alta</td></tr>
+                <tr><td>Schroder activo</td><td class="num">❌</td><td class="num">❌</td><td class="num">✅</td></tr>
+                <tr><td>Santander Rofex</td><td class="num">❌</td><td class="num">✅</td><td class="num">✅</td></tr>
+                <tr><td>MegaQM activado</td><td class="num">❌</td><td class="num">❌</td><td class="num">✅</td></tr>
+              </tbody>
+            </table>
+            <hr class="divider" style="margin:12px 0">
+            <div class="alert alert-info">
+              <span class="alert-icon">💡</span>
+              <div>El fee promedio al 30/01 fue de ARS 12.128.712 total sobre 76.304 contratos = ARS 159/contrato. Con 25.000 contratos → ~$3.975.000/mes en fee bruto.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PAGE ESCENARIOS -->
+
+  <footer class="pg-footer">
+    DA Valores S.A. · Mercado Institucional · Datos: Informe Consolidado Abril 2026 · 1816 Economía & Estrategia · Rofex · Elaboración interna.
+    &nbsp;|&nbsp; Análisis al 29/04/2026
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SCRIPTS -->
+<script>
+// ── NAVIGATION
+const titles = {
+  general:'Vista General — Abril 2026',
+  caucion:'Caución — Aranceles e Histórico',
+  rofex:'Futuros / Rofex — Posición y Escenarios',
+  acciones:'Acciones / CEDEARs — Renta Variable',
+  va:'VA USD — Volumen Administrado',
+  ranking:'Ranking de Clientes — Acumulado 2026',
+  interanual:'Comparativa Interanual 2024→2026',
+  oportunidades:'Oportunidades y Amenazas Comerciales',
+  escenarios:'Escenarios Proyectados Rofex 2026'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('page-title').textContent = titles[id];
+  const navs = document.querySelectorAll('.nav-item');
+  navs.forEach(n => { if(n.getAttribute('onclick').includes(id)) n.classList.add('active'); });
+}
+
+// ── CHART DEFAULTS
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6B7C93';
+
+const GOLD  = '#C9A84C';
+const AMBER = '#E8B84B';
+const NAVY  = '#0D1B2A';
+const BLUE  = '#1A3A5C';
+const GREEN = '#1B7A48';
+const RED   = '#C0392B';
+const MUTED = '#6B7C93';
+
+// helper
+function ctx(id){ return document.getElementById(id)?.getContext('2d'); }
+
+// ── CHART: Mix mes
+new Chart(ctx('chartMixMes'), {
+  type:'doughnut',
+  data:{
+    labels:['Caución','Futuros/Rofex','Acciones/CEDEARs','Otros'],
+    datasets:[{
+      data:[111863, 26448, 2411, 3534],
+      backgroundColor:[GREEN, BLUE, GOLD, MUTED],
+      borderWidth:2, borderColor:'#fff'
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'right', labels:{boxWidth:12, padding:14}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.label}: $${ctx.raw.toLocaleString('es-AR')}`}}
+    }
+  }
+});
+
+// ── CHART: Evolución 2026
+new Chart(ctx('chartEvol2026'), {
+  type:'bar',
+  data:{
+    labels:['Ene-26','Feb-26','Mar-26','Abr-26'],
+    datasets:[
+      {label:'Caución', data:[73980, 103780, 107158, 111863], backgroundColor:GREEN},
+      {label:'Futuros', data:[43580, 34610, 52378, 26448], backgroundColor:BLUE},
+      {label:'Acciones',data:[4524, 3612, 3032, 2411], backgroundColor:GOLD},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'top'}},
+    scales:{x:{stacked:true},y:{stacked:true, ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CHART: Caución Evolución
+new Chart(ctx('chartCaucionEvol'), {
+  type:'line',
+  data:{
+    labels:['Dic-23','Ene-24','Feb-24','Mar-24','Abr-24','May-24','Jun-24','Jul-24','Ago-24','Sep-24','Oct-24','Nov-24','Dic-24','Ene-25','Feb-25','Mar-25','Abr-25','May-25','Jun-25','Jul-25','Ago-25','Sep-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26','Abr-26'],
+    datasets:[{
+      label:'Aranceles Caución (ARS)',
+      data:[25350,28900,28000,45000,50000,48000,27000,37500,33000,34500,36000,31000,25800,30000,42000,50000,55000,44000,38000,29000,35000,42000,52000,45000,38000,73980,103780,107158,111863],
+      borderColor:GREEN, backgroundColor:'rgba(27,122,72,0.08)', fill:true, tension:0.4, pointRadius:3
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CAUCIÓN RANKING BARS
+const caucionData = [
+  {label:'Macro Fondos', val:123197, pct:31.0},
+  {label:'Santander Rio', val:66796, pct:16.8},
+  {label:'ICBC', val:46847, pct:11.8},
+  {label:'Adcap AM', val:39676, pct:10.0},
+  {label:'Balanz', val:43533, pct:11.0},
+  {label:'CMF AM', val:8140, pct:2.1},
+  {label:'Lombard', val:10903, pct:2.7},
+  {label:'Provinfondos', val:13297, pct:3.4},
+];
+const barsDiv = document.getElementById('caucionRankingBars');
+if(barsDiv){
+  caucionData.forEach((d,i) => {
+    barsDiv.innerHTML += `
+      <div class="progress-row" style="padding:0 18px">
+        <div class="progress-label" title="${d.label}">${d.label}</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" style="width:${d.pct*2.5}%;background:${i<3?GREEN:i<6?GOLD:BLUE}"></div>
+        </div>
+        <div class="progress-pct">${d.pct}%</div>
+        <div class="progress-val">$${d.val.toLocaleString('es-AR')}</div>
+      </div>`;
+  });
+}
+
+// ── CHART: Futuros Acum
+new Chart(ctx('chartFuturosAcum'), {
+  type:'bar',
+  data:{
+    labels:['IAM','Max Cap.','ICBC','Toronto','Macro','Zofingen','Balanz','Bull Mkt'],
+    datasets:[{
+      label:'Acum 2026 Futuros (ARS)',
+      data:[17447, 22884, 8595, 5561, 9588, 3213, 1555, 2423],
+      backgroundColor:[BLUE, GOLD, GREEN, MUTED, NAVY, AMBER, '#4A90D9', '#8BC34A']
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CHART: Acciones Evolución
+new Chart(ctx('chartAccionesEvol'), {
+  type:'line',
+  data:{
+    labels:['Ene-26','Feb-26','Mar-26','Abr-26'],
+    datasets:[
+      {label:'Acciones/CEDEARs', data:[4524, 3612, 3032, 2411], borderColor:GOLD, backgroundColor:'rgba(201,168,76,0.1)', fill:true, tension:0.4},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CHART: VA Evolución
+new Chart(ctx('chartVAEvol'), {
+  type:'line',
+  data:{
+    labels:['Jul-25','Ago-25','Sep-25','Oct-25','Nov-25','Dic-25','Ene-26','Feb-26','Mar-26','Abr-26'],
+    datasets:[{
+      label:'VA Total USD',
+      data:[142012, 112524, 200510, 355658, 337304, 292511, 418598, 394332, 429053, 410850],
+      borderColor:GOLD, backgroundColor:'rgba(201,168,76,0.1)', fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:GOLD
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`VA: USD ${c.raw.toLocaleString('es-AR')}`}}},
+    scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CHART: VA Mix doughnut
+new Chart(ctx('chartVAMix'), {
+  type:'doughnut',
+  data:{
+    labels:['ICBC (40.6%)','Macro (21.4%)','C. Andina (10.3%)','Valiant (4.9%)','Otros (22.8%)'],
+    datasets:[{
+      data:[166693, 87769, 42377, 20248, 93763],
+      backgroundColor:[RED, GREEN, BLUE, GOLD, MUTED],
+      borderWidth:2, borderColor:'#fff'
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'right', labels:{boxWidth:10, padding:8, font:{size:10}}}}
+  }
+});
+
+// ── CHART: Ranking Total
+new Chart(ctx('chartRankingTotal'), {
+  type:'bar',
+  data:{
+    labels:['Macro','Santander','ICBC','Adcap','Balanz','IAM','Max Cap','Lombard','Provinfondos','Ualintec','CMF','Zofingen','Toronto'],
+    datasets:[
+      {label:'Caución 2026', data:[123197,66796,46847,39676,43533,2974,0,10903,13297,5786,8140,1145,0], backgroundColor:GREEN},
+      {label:'Futuros 2026', data:[9588,0,8595,155,1555,17447,22884,0,0,0,0,3213,5561], backgroundColor:BLUE},
+      {label:'Acciones 2026',data:[0,0,5814,1043,0,0,0,0,781,86,0,0,19], backgroundColor:GOLD},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'top'}},
+    scales:{
+      x:{stacked:true},
+      y:{stacked:true,ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}
+    }
+  }
+});
+
+// ── CHART: Interanual Caución
+new Chart(ctx('chartInteranualCaucion'), {
+  type:'bar',
+  data:{
+    labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+    datasets:[
+      {label:'2024', data:[28900,28000,45000,50000,48000,27000,37500,33000,34500,36000,31000,25800], backgroundColor:'rgba(107,124,147,0.4)', borderColor:MUTED, borderWidth:1},
+      {label:'2025', data:[30000,42000,50000,55000,44000,38000,29000,35000,42000,52000,45000,38000], backgroundColor:'rgba(27,122,72,0.3)', borderColor:GREEN, borderWidth:1},
+      {label:'2026', data:[73980,103780,107158,111863,null,null,null,null,null,null,null,null], backgroundColor:GREEN, borderColor:GREEN, borderWidth:1},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'top'}},
+    scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CHART: Interanual Futuros
+new Chart(ctx('chartInteranualFuturos'), {
+  type:'bar',
+  data:{
+    labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+    datasets:[
+      {label:'2024', data:[12000,14000,8000,18000,22000,8000,11000,15000,9000,19000,16000,16000], backgroundColor:'rgba(107,124,147,0.4)'},
+      {label:'2025', data:[16000,18000,28000,22000,19000,15000,25000,30000,28000,35000,24000,14000], backgroundColor:'rgba(26,58,92,0.4)', borderColor:BLUE},
+      {label:'2026', data:[43580,34610,52378,26448,null,null,null,null,null,null,null,null], backgroundColor:BLUE},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'top'}},
+    scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+
+// ── CHART: Escenarios
+new Chart(ctx('chartEscenarios'), {
+  type:'bar',
+  data:{
+    labels:['Pesimista','Base','Optimista'],
+    datasets:[{
+      label:'Ingresos anuales estimados Rofex (ARS)',
+      data:[216000, 420000, 720000],
+      backgroundColor:[RED, GREEN, BLUE],
+      borderRadius:6, borderSkipped:false
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>`ARS ${c.raw.toLocaleString('es-AR')} / año`}}
+    },
+    scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString('es-AR')}}}
+  }
+});
+</script>
+</body>
+</html>
